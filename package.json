@@ -1,0 +1,13 @@
+{
+  "name": "react-cognito-back",
+  "version": "1.0.0",
+  "scripts": {
+    "deploy": "sls deploy --verbose",
+    "remove": "sls remove"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serverless": "^3.30.1"
+  }
+}

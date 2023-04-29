@@ -1,0 +1,68 @@
+service: react-cognito
+
+provider:
+  name: aws
+  stackTags:
+    STACK: ${self:service}
+  tags:
+    STACK: ${self:service}
+
+custom:
+  stage: ${opt:stage, 'dev'}
+
+resources:
+  Resources:
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-${self:custom.stage}-UserPool
+        # Set email as an alias
+        UsernameAttributes:
+          - email
+        UsernameConfiguration:
+          CaseSensitive: false
+        AutoVerifiedAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireLowercase: true
+            RequireNumbers: true
+            RequireUppercase: true
+            RequireSymbols: true
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:service}-${self:custom.stage}-UserPoolClient
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ADMIN_NO_SRP_AUTH
+        PreventUserExistenceErrors: ENABLED
+        GenerateSecret: false
+
+    # The federated identity for our user pool to auth with
+    CognitoIdentityPool:
+      Type: AWS::Cognito::IdentityPool
+      Properties:
+        IdentityPoolName: ${self:service}-${self:custom.stage}-IdentityPool
+        # Don't allow unauthenticated users
+        AllowUnauthenticatedIdentities: false
+        # Link to our User Pool
+        CognitoIdentityProviders:
+          - ClientId:
+              Ref: CognitoUserPoolClient
+            ProviderName:
+              Fn::GetAtt: [ "CognitoUserPool", "ProviderName" ]
+
+  Outputs:
+
+    CognitoUserPoolId:
+      Value: !Ref CognitoUserPool
+
+    IdentityPoolId:
+      Value: !Ref CognitoIdentityPool
+
+    CognitoUserPoolClientId:
+      Value: !Ref CognitoUserPoolClient
